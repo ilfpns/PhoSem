@@ -2,7 +2,7 @@
 
 PIN 다이오드 die 이미지에서 미세 결함을 검출하는 MIL 기반 다중 라벨 분류 노트북입니다.
 
-- 파일: `Phosem_ver2 2.ipynb`
+- 파일: `Phosem_ver2.ipynb`
 - 총 21개 셀 (코드 20 + 빈 셀 1)
 - 실행 환경: Google Colab (GPU 런타임)
 
