@@ -21,6 +21,239 @@ PIN 다이오드 불량 검출 프로젝트입니다. <br>
 2. **"내 드라이브에 바로가기 추가"** 로 내 드라이브 최상위에 `300_data` 이름 그대로 둡니다.
 3. 이후 코드 수정 없이 실행할 수 있습니다.
 
+## 사용 가이드
+
+### 1. 소스 자료 위치 및 다운로드 하는 방법
+#### 자료 위치
+- 소스 코드 (노트북, 환경 파일 등 GitHub 내 README에 기재됨)
+  - GitHub: https://github.com/ilfpns/PhoSem
+- 모델 파일 · 학습 데이터 · 결과물
+  - Google Drive 300_data: https://drive.google.com/drive/folders/1FvdcUWm50mw2Sf-dVZ6hx_DM8uKJgRQS?usp=sharing
+
+#### 소스 코드 받기
+- 명령어: `git clone https://github.com/ilfpns/PhoSem.git`
+- 또는 GitHub 저장소 페이지에서 **Code → Download ZIP**
+
+#### 모델 파일 받기
+모델 파일 `phosem_patchcore_v1.pt`는 약 200 MB입니다. GitHub에는 100 MB가 넘는 파일을 올릴 수 없어서 코드와 분리해 Google Drive에 올려 두었습니다.
+
+1. 아래 드라이브 링크를 엽니다.
+   - https://drive.google.com/drive/folders/1FvdcUWm50mw2Sf-dVZ6hx_DM8uKJgRQS?usp=sharing
+2. `release` 폴더로 들어갑니다.
+   - `phosem_patchcore_v1.pt` 파일을 우클릭하고 **다운로드**를 누릅니다. 파일은 보통 내 컴퓨터의 "다운로드" 폴더에 저장됩니다.
+3. GitHub에서 받은 `PhoSem` 폴더 안에 `weights`라는 새 폴더를 만듭니다.
+   - 2번에서 받은 파일을 `weights` 폴더로 옮깁니다.
+
+```
+PhoSem/
+├─ PhoSem_Inference.ipynb
+└─ weights/
+   └─ phosem_patchcore_v1.pt
+```
+
+이렇게 두면 `PhoSem_Inference.ipynb`가 모델 파일을 자동으로 찾아서 불러옵니다.
+
+#### Colab에서 실행하는 경우
+위 1~3번 대신, 드라이브 링크에서 `300_data` 폴더를 **"내 드라이브에 바로가기 추가"** 로 내 드라이브 최상위에 추가하면 됩니다. 노트북이 드라이브의 모델 파일을 바로 찾습니다.
+
+### 2. 자신의 컴퓨터에 동일한 환경 구현하는 방법
+개발은 Google Colab(Python 3.11, PyTorch 2.x, T4 GPU)에서 진행했습니다. 아래 두 방법 중 하나를 고르면 됩니다.
+
+#### 방법 A. Colab에서 실행
+1. 아래 링크를 엽니다. Google 계정 로그인이 필요합니다.
+   - https://colab.research.google.com/github/ilfpns/PhoSem/blob/main/PhoSem_Inference.ipynb
+2. 메뉴 **런타임 → 런타임 유형 변경 → T4 GPU**를 선택합니다.
+3. 1번 셀을 실행합니다. 라이브러리 버전과 장치가 출력되면 준비가 끝난 겁니다.
+
+#### 방법 B. 내 컴퓨터에 설치 (Windows · macOS · Linux)
+- Miniconda: https://docs.anaconda.com/miniconda/ 에서 내 운영체제용을 받아 설치합니다.
+- Git: https://git-scm.com/downloads 에서 받아 설치합니다. Git 없이 ZIP으로 받을 것이라면 생략해도 괜찮습니다.
+
+**1. 터미널 열기**
+- Windows: 시작 메뉴에서 **Anaconda Prompt**를 엽니다.
+- macOS · Linux: 터미널을 엽니다.
+
+**2. 소스 받기**
+```bash
+git clone https://github.com/ilfpns/PhoSem.git
+cd PhoSem
+```
+
+**3. 환경 만들기**
+`PhoSem` 폴더 안의 `environment.yml`로 같은 환경을 만듭니다. 처음 한 번 설정이 필요합니다.
+```bash
+conda env create -f environment.yml
+conda activate phosem
+```
+
+**4. 실행 확인**
+```bash
+jupyter lab
+```
+
+브라우저가 열리면 `PhoSem_Inference.ipynb`를 열고 1번 셀을 실행합니다. 아래처럼 버전과 장치가 출력되면 환경 구성이 끝난 겁니다.
+```
+Python 3.11.x / torch 2.x / torchvision 0.x / ...
+실행 위치: 로컬 / 장치: CPU (또는 GPU 이름)
+```
+
+다음에 다시 실행할 때는 터미널에서 `conda activate phosem` → `jupyter lab`만 하면 됩니다.
+
+#### 참고 사항
+처음 추론할 때 ResNet50 사전학습 가중치(약 100 MB)가 인터넷에서 자동으로 내려받아집니다. 패키지 목록은 `requirements.txt`, 환경 정의는 `environment.yml`에 있습니다.
+
+### 3. 다운로드 및 구현한 환경에서 이미지 한 장에 대하여 어떻게 추론 결과를 얻는 방법
+추론은 `PhoSem_Inference.ipynb` 하나로 합니다. 1번(모델 파일 받기)과 2번(환경 구성)을 마친 상태에서 시작합니다.
+`PhoSem_Inference.ipynb` 하나로 추론 셀을 모아뒀습니다.
+
+#### 순서
+1. 노트북 열기
+   - Colab: https://colab.research.google.com/github/ilfpns/PhoSem/blob/main/PhoSem_Inference.ipynb
+   - 내 컴퓨터: 터미널에서 `conda activate phosem` → `jupyter lab`을 실행하고 `PhoSem_Inference.ipynb`를 엽니다.
+2. 1번 셀 「환경 확인」 실행: 버전과 장치(GPU/CPU)가 출력됩니다.
+3. 2번 셀 「모델 파일 준비」 실행: `weights/phosem_patchcore_v1.pt`를 자동으로 찾아 불러옵니다. 아래처럼 판정 기준이 출력되면 정상입니다.
+   ```
+   판정 구간: ≥ 11.601 불량 의심 / 7.950 ~ 11.601 검토 필요 / < 7.950 정상 범위
+   ```
+
+4. 3번 셀 「모델 구성」 실행: 학습 때와 같은 특징 추출기(ResNet50)를 준비합니다. 처음 한 번은 ResNet50 가중치를 내려받습니다.
+5. 4번 셀 「이미지 한 장 추론」에 사진 경로를 넣고 실행합니다.
+   ```python
+   IMAGE_PATH = "C:/Users/내이름/Desktop/R4_2_1.PNG"
+   ```
+
+   Colab에서는 비워 두고 실행하면 파일 업로드 창이 뜹니다. 거기서 사진을 고르면 됩니다.
+
+   테스트용 사진은 드라이브 `300_data/판정_1467/` 폴더에서 받을 수 있습니다 (예: `R4_2_1.PNG`).
+
+#### 결과
+실행하면 원본 사진과 이상 히트맵이 나란히 표시되고, 아래 결과가 출력됩니다.
+```
+파일          R4_2_1.PNG
+점수          16.8196
+판정          불량 의심
+최댓값        17.2105
+최대위치_y    64
+최대위치_x    63
+정상_백분위   100.0
+시험지_순위   1 / 1468
+```
+히트맵 그림은 `outputs/R4_2_1_heatmap.png`로 저장됩니다. 빨간 부분일수록 정상 die와 많이 다른 곳이고, 흰 X가 가장 이상한 위치입니다.
+
+#### 결과 읽는 법
+| 항목 | 뜻 |
+|---|---|
+| 점수 | 사진을 11,881개 조각으로 나눠 정상 die 조각과 비교했을 때, 가장 다른 12개 조각의 평균 거리. 클수록 불량에 가깝습니다 |
+| 판정 | 점수를 아래 세 구간으로 나눈 결과 |
+| 최대위치 | 가장 이상한 조각의 위치 (109×109 격자 좌표, 히트맵의 흰 X) |
+| 정상_백분위 | 정상 die 2,138장 중 이 사진보다 점수가 낮은 비율. 100이면 어떤 정상 die보다도 이상합니다 |
+| 시험지_순위 | 채점용 1,467장 사이에 넣었을 때의 순위. 1위가 가장 불량스럽습니다 |
+
+| 판정 | 점수 | 기준 |
+|---|---|---|
+| 불량 의심 | 11.60 이상 | 정상 die 점수의 상위 3% 경계 |
+| 검토 필요 | 7.95 ~ 11.60 | 사람이 확인할 구간 |
+| 정상 범위 | 7.95 미만 | 시험지 1,467장에서 불량 95%가 이 값 이상이었음 |
+
+#### 여러 장을 한 번에 할 때 (선택)
+5번 셀 「폴더 일괄 추론」에 폴더 경로를 넣고 실행합니다.
+
+```python
+INPUT_DIR = "C:/Users/내이름/Desktop/새배치"
+```
+폴더 안 사진 전부의 결과가 점수 순으로 `outputs/predictions.csv`에 저장됩니다.
+
+#### 입력 사진 조건
+- 학습에 쓴 사진과 같은 장비·배율로 찍은 die 크롭 사진이어야 합니다.
+  - 3609 배치
+  - 339×450
+  - RGB입니다.
+- 촬영 조건이 다르면 정상 die도 점수가 높게 나올 수 있습니다.
+- 처리 시간은 사진 한 장에 GPU로 1~2초, CPU로 10~20초 정도입니다.
+
+### 4. 학습모델 소스 디렉토리 구조에 대한 설명
+#### GitHub 저장소 (`PhoSem` 폴더)
+```
+PhoSem/
+├─ README.md                    프로젝트 설명 · 사용 가이드
+├─ environment.yml              conda 환경 정의 (Python 3.11 + requirements.txt)
+├─ requirements.txt             pip 패키지 목록
+├─ PhoSem_Inference.ipynb       ★ 추론: 모델 파일을 불러와 사진 한 장 / 폴더 채점
+├─ AnomalyDetection.ipynb       ★ 최종 모델 학습: 메모리 뱅크 구축 → 채점 → 평가 → 모델 파일 내보내기
+├─ Phosem5.ipynb                MIL 분류기 최종본 (비교·결합용)
+├─ Phosem_ver4.ipynb            MIL 개선 A~D
+├─ Phosem_ver3.ipynb            MIL + 공식 정답지 채점 대응
+├─ Phosem_ver2.ipynb            MIL 전환 (패치 단위, 다중 라벨, ResNet18 앙상블)
+├─ Phosem_CNN.ipynb             첫 모델 (die 전체를 256×256으로 줄여 넣는 CNN)
+├─ Phosem.ipynb                 데이터 준비 (압축 해제, 라벨 분리, 슬라이싱)
+├─ weights/                     (직접 만듦) phosem_patchcore_v1.pt 를 넣는 곳
+└─ outputs/                     (추론 시 자동 생성) 히트맵 그림 · 결과 CSV
+```
+
+#### Google Drive (`300_data` 폴더)
+
+```
+300_data/
+├─ release/
+│  ├─ phosem_patchcore_v1.pt        ★ 추론용 모델 파일 (메모리 뱅크 + 설정 + 판정 기준)
+│  └─ phosem_patchcore_v1.json      모델 파일 정보 (설정값, 판정 기준, sha256)
+├─ 남은_2142장/                     정상 뱅크를 만든 사진 (정렬 표식 4장 제외 2,138장 사용)
+├─ 판정_1467/                       채점 시험지 사진 1,467장 (불량 882 / 양품 585)
+├─ banks/                           메모리 뱅크 · 채점 점수 · 히트맵 · 평가 결과
+├─ wrong_imgs/                      잘못 판정한 사진 (FP · FN, 원본 + 히트맵)
+├─ 261008_이탐점수_3609장.csv       1,467장 판정 라벨의 출처
+└─ 3609_개선_전체순위_….csv         MIL 분류기의 3,609장 순위
+```
+
+#### 최종 모델이 만들어지는 과정
+```
+정상 사진 2,138장 → 868×868 리사이즈 → ResNet50 layer2+layer3 특징 (1,024차원)
+                 → 장당 1,000조각 = 후보 213만 개 → k-center 코어셋 10만 개 = 메모리 뱅크
+
+새 사진 → 같은 특징 추출 (109×109 = 11,881조각) → 조각마다 뱅크와의 최근접 거리
+        → 상위 12개 평균 = 점수 → 판정 구간
+```
+
+#### 학습 노트북 `AnomalyDetection.ipynb` 셀 구성
+위에서부터 코드 셀 순서입니다.
+
+| 순서 | 셀 제목 | 하는 일 | 드라이브에 남는 결과 |
+|---|---|---|---|
+| 1 | Library 호출 | 라이브러리 불러오기 | — |
+| 2 | 정상 데이터 확인 | `남은_2142장` 사진 확인 | — |
+| 3 | 특징 개수 및 메모리 뱅크 크기 확인 | 조각 수 · 뱅크 크기 계산 | — |
+| 4 | 메모리 뱅크 구축 v2 | 점검용 뱅크 (2,142장 전체) | `banks/bank_868_coreset_ex0.pt` |
+| 5 | Outlier 채점 | 정상 사진끼리 비교해 튀는 사진 찾기 | `banks/outlier_scores_868_coreset_ex0.csv` |
+| 6~7 | 점검 · 이상 맵 겹쳐 보기 | 가장자리 · 웨이퍼 위치 확인 | — |
+| 8 | 제외 목록 만들기 | 제외 후보 정리 (적용 보류) | `banks/exclusion_lists_ex0.csv` |
+| 9 | 메모리 뱅크 구축 v2 (정렬 표식 4장 제외) | **최종 메모리 뱅크** | `banks/bank_868_coreset_nomark.pt` |
+| 10 | 1,467장 채점 | **시험지 채점** | `banks/test1467_scores_…_nomark.csv` |
+| 11 | 새 축 + MIL 결합 | AUROC · ROC/PR 곡선 | `banks/fusion_*_nomark.*` |
+| 12 | 틀리게 판단한 이미지 모으기 | 오분류 사진 정리 | `wrong_imgs/` |
+| 13 | 개선 실험 | 테두리 마스크 · top-k · 색 축 비교 | `banks/improve_*.csv` |
+| 14 | 최종 모델 내보내기 | **모델 파일 만들기** (재현 확인 포함) | `release/phosem_patchcore_v1.pt` |
+
+최종 모델만 다시 만들려면 1 → 2 → 3 → 9 → 10 → 14 순서로 실행합니다.
+
+#### 모델 파일 `phosem_patchcore_v1.pt` 구성
+| 항목 | 내용 |
+|---|---|
+| `memory_bank` | 정상 조각 특징 100,000 × 1,024 (float16) |
+| `config` | 백본(ResNet50) · 사용 층 · 입력 크기(868) · 정규화 값 · 점수 방식(상위 12개 평균) |
+| `thresholds` | 판정 기준 두 개 (11.60 / 7.95)와 그 근거 |
+| `reference` | 정상 2,138장 · 시험지 1,467장 점수 (백분위 · 순위 계산용) |
+| `verify` | 내보낼 때 다시 채점해 맞춰 본 사진 3장의 점수 |
+
+#### 추론 노트북 `PhoSem_Inference.ipynb` 셀 구성
+| 순서 | 셀 제목 | 하는 일 |
+|---|---|---|
+| 1 | 환경 확인 | 라이브러리 버전 · GPU/CPU 확인 |
+| 2 | 모델 파일 준비 | `phosem_patchcore_v1.pt` 찾아서 불러오기 |
+| 3 | 모델 구성 | 학습 때와 같은 특징 추출기 준비 |
+| 4 | 이미지 한 장 추론 | 사진 한 장 → 점수 · 판정 · 히트맵 |
+| 5 | 폴더 일괄 추론 (선택) | 폴더 안 사진 전부 → `outputs/predictions.csv` |
+
+
 ## 배경
 
 PIN 다이오드 die에는 육안 검사로 놓치기 쉬운 미세 결함이 있습니다. 예를 들면 이물질(particle)과 스크래치(scratch)입니다. 이런 결함을 가진 채 다음 공정으로 넘어가는 경우가 있어, die 이미지를 입력으로 받아 결함 유무를 자동으로 판별하는 파이프라인을 만들었습니다.
