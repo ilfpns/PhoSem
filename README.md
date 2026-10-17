@@ -12,7 +12,7 @@ PIN 다이오드 불량 검출 프로젝트입니다. <br>
 
 | 구분 | 위치 | 내용 |
 |---|---|---|
-| 코드 | 이 저장소 | 노트북 7개 (아래 [저장소 구성](#저장소-구성) 참고) |
+| 코드 | 이 저장소 | 노트북 8개 · 환경 파일 2개 (아래 [저장소 구성](#저장소-구성) 참고) |
 | 결과물 | [Google Drive · 300_data](https://drive.google.com/drive/folders/1FvdcUWm50mw2Sf-dVZ6hx_DM8uKJgRQS?usp=sharing) | 메모리 뱅크(.pt), 채점 결과 CSV, 그래프, 판정 사진, 오분류 사진 |
 
 노트북은 드라이브 경로가 `/content/drive/MyDrive/300_data`로 고정돼 있습니다. 그래서 실행 전에 준비가 필요합니다.
@@ -81,6 +81,7 @@ die 이미지 전체에 라벨 하나를 붙여 학습하면, 결함이 없는 �
 | 5 | [`Phosem_ver4.ipynb`](https://colab.research.google.com/github/ilfpns/PhoSem/blob/main/Phosem_ver4.ipynb) | 개선 A~D | 정답지 라벨로 학습셋 구성, 방법 8가지 비교, 3609 도메인 정합(배율·방향·위치·색), 상위 900 채점, 제출용 zip |
 | 6 | **[`Phosem5.ipynb`](https://colab.research.google.com/github/ilfpns/PhoSem/blob/main/Phosem5.ipynb)** | **MIL 최종** | ver4 + 개선 E(numpy 2 호환, 정답지 누락 행 확인, 3609 재크롭·검은 크롭 방지), 드라이브 재연결 |
 | 7 | **[`AnomalyDetection.ipynb`](https://colab.research.google.com/github/ilfpns/PhoSem/blob/main/AnomalyDetection.ipynb)** | **이상탐지 최종** | ResNet50 PatchCore 뱅크, Outlier 점검, 1,467장 Novelty 채점, MIL 결합, 오분류 분석, 개선 실험 |
+| 8 | **[`PhoSem_Inference.ipynb`](https://colab.research.google.com/github/ilfpns/PhoSem/blob/main/PhoSem_Inference.ipynb)** | **추론** | 모델 파일(`phosem_patchcore_v1.pt`)을 불러와 사진 한 장 · 폴더 채점 → 점수 · 판정 · 히트맵 |
 
 ### `Phosem5.ipynb` 셀 위치 (MIL 최종)
 
@@ -114,6 +115,17 @@ die 이미지 전체에 라벨 하나를 붙여 학습하면, 결함이 없는 �
 | 11 | **MIL 결합**, AUROC·신뢰구간·작동점·w 훑기·ROC/PR | `banks/fusion_table · fusion_w_sweep · fusion_summary_nomark.csv`, `fusion_curves_nomark.png` |
 | 12 | 오분류 사진 모으기 + 회차별 측정값 비교 | `wrong_imgs/` |
 | 13 | 개선 실험 (테두리 마스크·top-k·블러 + 색 축, 반반 분할 검증) | `banks/improve_*.csv`, `color_feats_lab.csv` |
+| 14 | **최종 모델 내보내기** (메모리 뱅크 + 설정 + 판정 기준, 재현 확인 포함) | `release/phosem_patchcore_v1.pt`, `phosem_patchcore_v1.json` |
+
+### `PhoSem_Inference.ipynb` 셀 위치 (추론)
+
+| 셀 | 하는 일 |
+|---|---|
+| 1 | 환경 확인 (라이브러리 버전 · GPU/CPU) |
+| 2 | 모델 파일 준비 (`weights/` 또는 드라이브 `release/`에서 `phosem_patchcore_v1.pt` 불러오기) |
+| 3 | 모델 구성 (학습 때와 같은 특징 추출기) |
+| 4 | 이미지 한 장 추론 → 점수 · 판정 · 히트맵 |
+| 5 | 폴더 일괄 추론 (선택) → `outputs/predictions.csv` |
 
 ## 드라이브 결과물 구성 (`300_data`)
 
@@ -124,6 +136,7 @@ die 이미지 전체에 라벨 하나를 붙여 학습하면, 결함이 없는 �
 ├─ 261008_이탐점수_3609장.csv       교수님 이상탐지 점수 + 판정 라벨 (1,467장 라벨의 출처)
 ├─ 3609_개선_전체순위_….csv         MIL(Phosem5) 3,609장 전체 순위
 ├─ 판정_1467_전체순위.csv           MIL 순위표를 1,467장만 추린 것
+├─ release/                         추론용 모델 파일 (phosem_patchcore_v1.pt · .json)
 ├─ banks/
 │  ├─ bank_868_coreset_nomark.pt    최종 메모리 뱅크 (10만 × 1,024)
 │  ├─ bank_868_coreset_ex0.pt       점검용 뱅크 (정렬 표식 포함)
@@ -140,14 +153,27 @@ die 이미지 전체에 라벨 하나를 붙여 학습하면, 결함이 없는 �
 
 MIL 학습 원본(`every_define/crop`)과 MIL 가중치 제출 zip은 이 공유 폴더에 들어 있지 않습니다.
 
+## 생성 파일
+
+개발 마무리 단계에서 새로 만든 파일과, 실행하면 생기는 파일입니다.
+
+| 파일 | 위치 | 만드는 곳 | 내용 |
+|---|---|---|---|
+| `environment.yml` | 저장소 | — | conda 환경 정의 (Python 3.11 + `requirements.txt`) |
+| `requirements.txt` | 저장소 | — | pip 패키지 목록 |
+| `phosem_patchcore_v1.pt` | 드라이브 `300_data/release/` | `AnomalyDetection.ipynb` 마지막 셀 | 추론용 모델 파일 (메모리 뱅크 100,000 × 1,024 + 설정 + 판정 기준, 약 195 MB) |
+| `phosem_patchcore_v1.json` | 드라이브 `300_data/release/` | `AnomalyDetection.ipynb` 마지막 셀 | 모델 파일 정보 (설정값 · 판정 기준 · sha256) |
+| `weights/` | 내 컴퓨터의 `PhoSem` 폴더 | 사용자가 직접 만듦 | 내려받은 `phosem_patchcore_v1.pt`를 넣는 폴더 |
+| `outputs/` | 노트북을 실행한 폴더 | `PhoSem_Inference.ipynb` 실행 시 자동 생성 | 히트맵 그림(`*_heatmap.png`) · 일괄 추론 결과(`predictions.csv`) |
+
 ## 재현 순서
 
 1. 위 [최종 소스 · 결과물 받기](#최종-소스--결과물-받기)대로 `300_data` 바로가기를 만듭니다.
 2. Colab 런타임을 **GPU(T4)** 로 둡니다.
 3. **`Phosem5.ipynb`** 를 위에서부터 실행합니다. MIL 학습과 3,609장 채점을 하고 `3609_개선_전체순위_*.csv`를 만듭니다. 학습 원본 이미지가 필요합니다. <br>
    3.1. 개발 모델 학습은 3,609장으로 진행하였습니다.
-5. **`AnomalyDetection.ipynb`** 를 실행합니다.
-   - 최종 경로만 돌리려면 셀 1 → 2 → 3 → 9 → 10 → 11 순서입니다. 셀 4~8은 뱅크 점검용입니다.
+4. **`AnomalyDetection.ipynb`** 를 실행합니다.
+   - 최종 경로만 돌리려면 셀 1 → 2 → 3 → 9 → 10 → 11 → 14 순서입니다. 셀 4~8은 뱅크 점검용이고, 셀 14가 추론용 모델 파일을 만듭니다.
    - 셀 10(1,467장 채점)은 T4에서 약 23분 걸리고, 20%마다 체크포인트를 저장해서 끊겨도 이어서 돌아갑니다.
    - 셀 12~13은 결과 분석과 개선 실험입니다.
 
